@@ -1,4 +1,4 @@
-﻿using LogisticsSystem.Application.Common;
+﻿using LogisticsSystem.Application.Common.Interfaces;
 using LogisticsSystem.Application.DTOs;
 
 namespace LogisticsSystem.Application.Features.Customers.Commands;
