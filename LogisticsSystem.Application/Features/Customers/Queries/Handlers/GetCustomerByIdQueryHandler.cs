@@ -1,11 +1,11 @@
 ﻿using AutoMapper;
-using LogisticsSystem.Application.Common;
+using LogisticsSystem.Application.Common.Interfaces;
 using LogisticsSystem.Application.DTOs;
 using LogisticsSystem.Application.Features.Customers.Queries;
 using LogisticsSystem.Domain.Interfaces;
 using MediatR;
 
-namespace LogisticsSystem.Application.Features.Customers.Handlers;
+namespace LogisticsSystem.Application.Features.Customers.Queries.Handlers;
 
 public class GetCustomerByIdQueryHandler : IQueryHandler<GetCustomerByIdQuery, CustomerDto?>
 {

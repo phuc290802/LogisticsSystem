@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using LogisticsSystem.Application.Common;
+using LogisticsSystem.Application.Common.Interfaces;
 using LogisticsSystem.Application.DTOs;
 using LogisticsSystem.Application.Features.Shipments.Queries;
 using LogisticsSystem.Domain.Entities;
@@ -23,7 +23,6 @@ public class GetAllShipmentsQueryHandler : IQueryHandler<GetAllShipmentsQuery, I
     {
         var shipments = await _shipmentRepository.GetAllAsync(cancellationToken);
 
-        // Apply filters
         if (!string.IsNullOrEmpty(request.Type))
         {
             if (Enum.TryParse<ShipmentType>(request.Type, true, out var type))
