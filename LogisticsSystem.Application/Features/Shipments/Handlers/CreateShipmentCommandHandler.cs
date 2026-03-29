@@ -1,58 +1,81 @@
 ﻿using AutoMapper;
-using LogisticsSystem.Application.Common;
+using LogisticsSystem.Application.Common.Interfaces;
 using LogisticsSystem.Application.DTOs;
-using LogisticsSystem.Application.Features.Customers.Commands;
+using LogisticsSystem.Application.Features.Shipments.Commands;
 using LogisticsSystem.Domain.Entities;
 using LogisticsSystem.Domain.Interfaces;
 using MediatR;
 
-namespace LogisticsSystem.Application.Features.Customers.Handlers;
+namespace LogisticsSystem.Application.Features.Shipments.Handlers;
 
-public class CreateShipmentCommandHandler : ICommandHandler<CreateCustomerCommand, CustomerDto>
+public class CreateShipmentCommandHandler : ICommandHandler<CreateShipmentCommand, ShipmentDto>
 {
+    private readonly IShipmentRepository _shipmentRepository;
     private readonly ICustomerRepository _customerRepository;
     private readonly IMapper _mapper;
     private readonly IMediator _mediator;
 
     public CreateShipmentCommandHandler(
+        IShipmentRepository shipmentRepository,
         ICustomerRepository customerRepository,
         IMapper mapper,
         IMediator mediator)
     {
+        _shipmentRepository = shipmentRepository;
         _customerRepository = customerRepository;
         _mapper = mapper;
         _mediator = mediator;
     }
 
-    public async Task<CustomerDto> Handle(CreateCustomerCommand request, CancellationToken cancellationToken)
+    public async Task<ShipmentDto> Handle(CreateShipmentCommand request, CancellationToken cancellationToken)
     {
-        // Check if code already exists
-        var exists = await _customerRepository.IsCodeExistsAsync(request.Code, cancellationToken: cancellationToken);
+        var exists = await _shipmentRepository.IsShipmentNoExistsAsync(request.ShipmentNo, cancellationToken: cancellationToken);
         if (exists)
         {
-            throw new InvalidOperationException($"Customer with code {request.Code} already exists");
+            throw new InvalidOperationException($"Shipment with number {request.ShipmentNo} already exists");
         }
 
-        // Parse customer type
-        if (!Enum.TryParse<CustomerType>(request.Type, true, out var customerType))
+        var shipper = await _customerRepository.GetByIdAsync(request.ShipperId, cancellationToken);
+        if (shipper == null)
         {
-            throw new ArgumentException($"Invalid customer type: {request.Type}");
+            throw new ArgumentException($"Shipper with id {request.ShipperId} not found");
         }
 
-        // Create customer entity
-        var customer = new Customer(
-            request.Code,
-            request.Name,
-            customerType,
-            request.TaxCode);
+        if (!Enum.TryParse<ShipmentType>(request.Type, true, out var shipmentType))
+        {
+            throw new ArgumentException($"Invalid shipment type: {request.Type}");
+        }
 
-        // Update additional info
-        customer.UpdateInfo(request.Name, request.Address, request.Phone, request.Email);
+        if (!Enum.TryParse<TransportMode>(request.Mode, true, out var transportMode))
+        {
+            throw new ArgumentException($"Invalid transport mode: {request.Mode}");
+        }
 
-        // Save to database
-        var created = await _customerRepository.AddAsync(customer, cancellationToken);
+        var shipment = new Shipment(
+            request.ShipmentNo,
+            shipmentType,
+            transportMode,
+            request.ShipperId);
 
-        // Return DTO
-        return _mapper.Map<CustomerDto>(created);
+        shipment.SetCargoInfo(
+            request.GoodsDescription,
+            request.Quantity,
+            request.Weight,
+            request.Volume,
+            request.PackageType);
+
+        if (request.ConsigneeId.HasValue)
+        {
+            var consignee = await _customerRepository.GetByIdAsync(request.ConsigneeId.Value, cancellationToken);
+            if (consignee == null)
+            {
+                throw new ArgumentException($"Consignee with id {request.ConsigneeId} not found");
+            }
+            shipment.SetConsignee(request.ConsigneeId.Value);
+        }
+
+        var created = await _shipmentRepository.AddAsync(shipment, cancellationToken);
+
+        return _mapper.Map<ShipmentDto>(created);
     }
 }

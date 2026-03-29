@@ -1,6 +1,6 @@
 ﻿using MediatR;
 
-namespace LogisticsSystem.Application.Common;
+namespace LogisticsSystem.Application.Common.Interfaces;
 
 public interface IQuery<TResponse> : IRequest<TResponse>
 {

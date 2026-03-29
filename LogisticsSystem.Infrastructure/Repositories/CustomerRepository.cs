@@ -11,6 +11,11 @@ public class CustomerRepository : GenericRepository<Customer>, ICustomerReposito
     {
     }
 
+    public async Task<IReadOnlyList<Customer>> GetAllCustomersAsync(CancellationToken cancellationToken = default)
+    {
+        return await _dbSet.ToListAsync(cancellationToken);
+    }
+
     public async Task<Customer?> GetByCodeAsync(string code, CancellationToken cancellationToken = default)
     {
         return await _dbSet.FirstOrDefaultAsync(c => c.Code == code, cancellationToken);
